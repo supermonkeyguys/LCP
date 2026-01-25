@@ -1,19 +1,20 @@
-// apps/client/src/pages/Editor.tsx
 import React from 'react';
-import { Layout } from 'antd';
+import { Button, Layout, message } from 'antd';
 import { DndContext, type DragEndEvent, useDroppable } from '@dnd-kit/core';
 import { useEditorStore } from '../stores/useEditorStore';
 import { Renderer } from '../components/Renderer';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { MaterialPanel } from '../components/MaterialPanel';
 import type { ComponentNode } from '@lowcode/shared';
+import { CopilotInput } from '../components/CopilotInput';
+import { EyeOutlined, SaveOutlined } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
 
-// 一个简单的画布放置区包装器
+// 画布放置区
 const CanvasDroppable = ({ children }: { children: React.ReactNode }) => {
   const { setNodeRef, isOver } = useDroppable({
-    id: 'canvas-root', // 画布的唯一 ID
+    id: 'canvas-root',
   });
 
   const style: React.CSSProperties = {
@@ -21,8 +22,8 @@ const CanvasDroppable = ({ children }: { children: React.ReactNode }) => {
     minHeight: '80vh',
     padding: 20,
     boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-    // 拖拽经过时高亮一下，提升体验
-    border: isOver ? '2px dashed #1890ff' : 'none', 
+    border: isOver ? '2px dashed #1890ff' : 'none',
+    transition: 'all 0.2s',
   };
 
   return (
@@ -33,30 +34,35 @@ const CanvasDroppable = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const Editor = () => {
-  const { page, addComponent } = useEditorStore();
+  const { page, addComponent, savePage } = useEditorStore();
 
-  // 核心逻辑：拖拽结束时触发
+  const handleSave = async () => {
+    await savePage();
+    message.success('页面已保存');
+  }
+
+  const handlePreview = () => {
+    window.open('/preview?id=65b8e9d0f1a2b3c4d5e6f7a8', '_blank');
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
-    // 1. 如果没有拖到有效区域 (over 为 null)，直接忽略
     if (!over) return;
 
-    // 2. 判断是不是从物料区拖进来的
     const isMaterial = active.data.current?.isMaterial;
     const type = active.data.current?.type;
 
     if (isMaterial && type && over.id === 'canvas-root') {
-      // 3. 创建新节点数据
       const newNode: ComponentNode = {
-        id: `${type}-${Date.now()}`, // 生成一个临时 ID，实际项目建议用 uuid/nanoid
+        id: `${type}-${Date.now()}`,
         type: type,
-        props: {}, // 默认属性
+        props: {
+          // 给新拖入的组件一点默认内容，防止空的看不见
+          children: type === 'Button' ? '新按钮' : undefined,
+          placeholder: type === 'Input' ? '请输入...' : undefined,
+        },
         children: []
       };
-
-      // 4. 调用 Store 方法添加
-      // 这里暂时只支持添加到根节点，后面再做添加到 Container
       addComponent(page.id, newNode);
     }
   };
@@ -64,24 +70,42 @@ export const Editor = () => {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <Layout style={{ height: '100vh' }}>
-        <Header style={{ background: '#fff', borderBottom: '1px solid #ddd', padding: '0 20px' }}>
-          <h3>LowCode Editor</h3>
+        {/* 顶部导航栏 + AI 输入框 */}
+        <Header style={{
+          background: '#fff',
+          borderBottom: '1px solid #ddd',
+          padding: '0 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div className="text-lg font-bold text-black mr-4">LowCode Editor</div> {/* 稍微调一下样式 */}
+
+          <CopilotInput />
+
+          {/* 右侧操作区 */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Button icon={<SaveOutlined />} onClick={handleSave}>保存</Button>
+            <Button type="primary" icon={<EyeOutlined />} onClick={handlePreview}>预览</Button>
+          </div>
         </Header>
+
         <Layout>
           {/* 左侧：物料区 */}
           <Sider width={200} style={{ background: '#fff', borderRight: '1px solid #ddd' }}>
             <MaterialPanel />
           </Sider>
 
-          {/* 中间：画布 */}
-          <Content style={{ padding: 20, background: '#f0f2f5' }}>
+          {/* 中间：画布区 */}
+          <Content style={{ padding: 20, background: '#f0f2f5', overflow: 'auto' }}>
             <CanvasDroppable>
-               <Renderer node={page} />
+              {/* 这里是核心：递归渲染整个页面树 */}
+              <Renderer node={page} />
             </CanvasDroppable>
           </Content>
 
-          {/* 右侧：属性配置 */}
-          <Sider width={300} style={{ background: '#fff', borderLeft: '1px solid #ddd', overflow: 'auto' }}>
+          {/* 右侧：设置区 */}
+          <Sider width={300} style={{ background: '#fff', borderLeft: '1px solid #ddd' }}>
             <SettingsPanel />
           </Sider>
         </Layout>

@@ -1,5 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
-import { Button as AntButton, Tag } from 'antd';
+import { Button as AntButton, } from 'antd';
 
 const MaterialItem = ({ type, label }: { type: string; label: string }) => {
   // useDraggable 让这个 DOM 元素变得可拖拽

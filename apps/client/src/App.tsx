@@ -1,10 +1,10 @@
 import { Editor } from './pages/Editor'
+import { Preview } from './pages/Preview';
 
 function App() {
 
-  return (
-    <Editor />
-  )
-}
+  const isPreview = window.location.pathname === '/preview';
 
+  return isPreview ? <Preview /> : <Editor />;
+}
 export default App

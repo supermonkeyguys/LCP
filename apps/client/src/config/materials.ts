@@ -1,9 +1,26 @@
 import type { ISchema } from '@formily/react';
 
+const CommonStyleSchema = {
+    className: {
+        type: 'string',
+        title: 'CSS类名 (Tailwind)',
+        'x-decorator': 'FormItem',
+        'x-component': 'Input.TextArea', // 用文本域，方便看长类名
+        'x-component-props': {
+            placeholder: '输入 Tailwind 类名，如 bg-red-500 p-4',
+            rows: 2,
+        },
+        // 放在最前面
+        'x-index': 0,
+    },
+}
+
+
 export const ComponentMaterials: Record<string, ISchema> = {
     Button: {
         type: 'object',
         properties: {
+            ...CommonStyleSchema,
             children: {
                 type: 'string',
                 title: '按钮文字',
@@ -36,6 +53,7 @@ export const ComponentMaterials: Record<string, ISchema> = {
     Input: {
         type: 'object',
         properties: {
+            ...CommonStyleSchema,
             placeholder: {
                 type: 'string',
                 title: '占位提示',
@@ -49,5 +67,12 @@ export const ComponentMaterials: Record<string, ISchema> = {
                 'x-component': 'Switch',
             }
         }
-    }
+    },
+
+    Container: {
+        type: 'object',
+        properties: {
+            ...CommonStyleSchema,
+        }
+    },
 }
